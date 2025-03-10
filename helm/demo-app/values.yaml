@@ -1,0 +1,39 @@
+# helm/demo-app/values.yaml
+# Global settings
+global:
+  environment: development
+
+# MongoDB configuration
+mongodb:
+  enabled: true
+  image: mongo:latest
+  persistence:
+    enabled: false
+
+# Backend configuration
+backend:
+  image:
+    repository: demo-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 80
+    targetPort: 3000
+  env:
+    MONGO_URL: "mongodb://mongo:27017/demo"
+
+# Frontend configuration
+frontend:
+  image:
+    repository: demo-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 80
+    targetPort: 80
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  host: demo.local

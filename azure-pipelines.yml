@@ -1,0 +1,103 @@
+# azure-pipelines.yml
+trigger:
+  branches:
+    include:
+    - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  backendTag: '$(Build.BuildId)'
+  frontendTag: '$(Build.BuildId)'
+  acrName: 'yourRegistry'  # Replace with your ACR name
+  acrConnectionName: 'your-acr-connection'  # Replace with your ACR connection
+  k8sConnectionName: 'your-k8s-connection'  # Replace with your K8s connection
+  helmReleaseName: 'demo'
+  namespace: 'demo-app'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildAndPush
+    steps:
+    - task: Docker@2
+      displayName: 'Build and Push Backend'
+      inputs:
+        containerRegistry: '$(acrConnectionName)'
+        repository: 'demo-backend'
+        command: 'buildAndPush'
+        Dockerfile: 'backend/Dockerfile'
+        buildContext: 'backend'
+        tags: |
+          $(backendTag)
+          latest
+
+    - task: Docker@2
+      displayName: 'Build and Push Frontend'
+      inputs:
+        containerRegistry: '$(acrConnectionName)'
+        repository: 'demo-frontend'
+        command: 'buildAndPush'
+        Dockerfile: 'frontend/Dockerfile'
+        buildContext: 'frontend'
+        tags: |
+          $(frontendTag)
+          latest
+
+    # Package Helm chart
+    - task: HelmDeploy@0
+      displayName: 'Helm package'
+      inputs:
+        command: 'package'
+        chartPath: 'helm/demo-app'
+        destination: '$(Build.ArtifactStagingDirectory)'
+        updateDependency: true
+
+    # Create values file with build-specific image tags
+    - bash: |
+        cat > $(Build.ArtifactStagingDirectory)/values-build.yaml << EOF
+        backend:
+          image:
+            repository: $(acrName).azurecr.io/demo-backend
+            tag: $(backendTag)
+            pullPolicy: Always
+        frontend:
+          image:
+            repository: $(acrName).azurecr.io/demo-frontend
+            tag: $(frontendTag)
+            pullPolicy: Always
+        EOF
+      displayName: 'Create values override file'
+
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: helm
+      displayName: 'Publish Helm chart and values'
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - deployment: DeployToK8s
+    displayName: 'Deploy to Kubernetes with Helm'
+    environment: 'development'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: helm
+            displayName: 'Download Helm chart'
+            
+          - task: HelmDeploy@0
+            displayName: 'Helm deploy'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceConnection: '$(k8sConnectionName)'
+              namespace: '$(namespace)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/helm/demo-app-0.1.0.tgz'
+              releaseName: '$(helmReleaseName)'
+              valueFile: '$(Pipeline.Workspace)/helm/values-build.yaml'
+              install: true
+              waitForExecution: true

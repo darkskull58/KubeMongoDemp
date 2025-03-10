@@ -1,0 +1,7 @@
+# helm/demo-app/Chart.yaml
+apiVersion: v2
+name: demo-app
+description: A minimal demo application with MongoDB, Express backend, and simple frontend
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

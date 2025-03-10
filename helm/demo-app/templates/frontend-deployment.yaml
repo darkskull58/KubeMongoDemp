@@ -1,0 +1,42 @@
+# helm/demo-app/templates/frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: {{ template "demo-app.name" . }}
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "demo-app.name" . }}
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: {{ template "demo-app.name" . }}
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: {{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}
+        imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+        ports:
+        - containerPort: 80
+---
+# helm/demo-app/templates/frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: {{ template "demo-app.name" . }}
+    component: frontend
+spec:
+  selector:
+    app: {{ template "demo-app.name" . }}
+    component: frontend
+  ports:
+  - port: {{ .Values.frontend.service.port }}
+    targetPort: {{ .Values.frontend.service.targetPort }}

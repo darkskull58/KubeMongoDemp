@@ -1,0 +1,45 @@
+# helm/demo-app/templates/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: {{ template "demo-app.name" . }}
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "demo-app.name" . }}
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: {{ template "demo-app.name" . }}
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URL
+          value: {{ .Values.backend.env.MONGO_URL }}
+---
+# helm/demo-app/templates/backend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: {{ template "demo-app.name" . }}
+    component: backend
+spec:
+  selector:
+    app: {{ template "demo-app.name" . }}
+    component: backend
+  ports:
+  - port: {{ .Values.backend.service.port }}
+    targetPort: {{ .Values.backend.service.targetPort }}
