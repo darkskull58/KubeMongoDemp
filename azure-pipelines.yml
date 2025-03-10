@@ -1,8 +1,5 @@
 # azure-pipelines.yml
-trigger:
-  branches:
-    include:
-    - main
+trigger: none
 
 pool:
   name: 'selfHostedPool'
