@@ -10,9 +10,9 @@ pool:
 variables:
   backendTag: '$(Build.BuildId)'
   frontendTag: '$(Build.BuildId)'
-  acrName: 'yourRegistry'  # Replace with your ACR name
-  acrConnectionName: 'your-acr-connection'  # Replace with your ACR connection
-  k8sConnectionName: 'your-k8s-connection'  # Replace with your K8s connection
+  acrName: 'sourishACRBasuDemo'  # Replace with your ACR name
+  acrConnectionName: 'sourish-acr-connection'  # Replace with your ACR connection
+  k8sConnectionName: 'aks-connection'  # Replace with your K8s connection
   helmReleaseName: 'demo'
   namespace: 'demo-app'
 
